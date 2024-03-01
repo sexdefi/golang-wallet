@@ -1,30 +1,30 @@
 package rpcs
 
 import (
-	"sync"
-	"utils"
-	"entities"
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"bytes"
-	"net/http"
 	"io/ioutil"
-	"math/rand"
-	"time"
+	"main/src/entities"
+	"main/src/utils"
 	"math"
+	"math/rand"
+	"net/http"
+	"sync"
+	"time"
 )
 
 type btc struct {
 	sync.Once
-	coinName string
-	callUrl string
-	assSite string
-	decimal int
-	Stable int
-	rpcUser string
+	coinName    string
+	callUrl     string
+	assSite     string
+	decimal     int
+	Stable      int
+	rpcUser     string
 	rpcPassword string
-	account string
-	isMining bool
+	account     string
+	isMining    bool
 }
 
 var __btc *btc
@@ -32,7 +32,7 @@ var __btc *btc
 func (r *rpc) BTC() *btc {
 	if __btc == nil {
 		__btc = new(btc)
-		__btc.Once = sync.Once {}
+		__btc.Once = sync.Once{}
 		__btc.Once.Do(func() {
 			__btc.create()
 		})
@@ -42,26 +42,26 @@ func (r *rpc) BTC() *btc {
 
 func (rpc *btc) create() {
 	setting := utils.GetConfig().GetCoinSettings()
-	rpc.coinName 	= setting.Name
-	rpc.callUrl		= setting.Url
-	rpc.assSite		= setting.AssistSite
-	rpc.decimal		= setting.Decimal
-	rpc.Stable		= setting.Stable
-	rpc.rpcUser		= setting.RPCUser
-	rpc.rpcPassword	= setting.RPCPassword
-	rpc.account		= setting.Deposit
-	rpc.isMining	= false
+	rpc.coinName = setting.Name
+	rpc.callUrl = setting.Url
+	rpc.assSite = setting.AssistSite
+	rpc.decimal = setting.Decimal
+	rpc.Stable = setting.Stable
+	rpc.rpcUser = setting.RPCUser
+	rpc.rpcPassword = setting.RPCPassword
+	rpc.account = setting.Deposit
+	rpc.isMining = false
 }
 
 type BtcResp struct {
-	Error interface {}	`json:"error"`
-	Id string			`json:"id"`
-	Result interface{}	`json:"result"`
+	Error  interface{} `json:"error"`
+	Id     string      `json:"id"`
+	Result interface{} `json:"result"`
 }
 
-func (rpc *btc) sendRequest(method string, params []interface {}) (BtcResp, error) {
+func (rpc *btc) sendRequest(method string, params []interface{}) (BtcResp, error) {
 	id := fmt.Sprintf("%d", rand.Intn(1000))
-	reqBody := RequestBody { method, params, id }
+	reqBody := RequestBody{method, params, id}
 	reqStr, err := json.Marshal(reqBody)
 	if err != nil {
 		panic(utils.LogIdxEx(utils.ERROR, 22, err))
@@ -75,7 +75,7 @@ func (rpc *btc) sendRequest(method string, params []interface {}) (BtcResp, erro
 	}
 	req.Header.Add("Content-Type", "application/json")
 	req.SetBasicAuth(rpc.rpcUser, rpc.rpcPassword)
-	client := &http.Client {}
+	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
 		panic(utils.LogIdxEx(utils.ERROR, 24, err))
@@ -96,7 +96,7 @@ func (rpc *btc) sendRequest(method string, params []interface {}) (BtcResp, erro
 		err = utils.LogIdxEx(utils.DEBUG, 40, nil)
 	}
 	if resBody.Error != nil {
-		tmp := resBody.Error.(map[string]interface {})
+		tmp := resBody.Error.(map[string]interface{})
 		err = utils.LogIdxEx(utils.ERROR, 26, tmp["message"])
 	}
 	return resBody, err
@@ -105,19 +105,19 @@ func (rpc *btc) GetTransactions(height uint) ([]entities.Transaction, error) {
 	var resp BtcResp
 	var err error
 	// 根据块高获取块哈希
-	if resp, err = rpc.sendRequest("getblockhash", []interface {} { height }); err != nil {
-		return []entities.Transaction {}, utils.LogIdxEx(utils.ERROR, 26, err)
+	if resp, err = rpc.sendRequest("getblockhash", []interface{}{height}); err != nil {
+		return []entities.Transaction{}, utils.LogIdxEx(utils.ERROR, 26, err)
 	}
 	blockHash := resp.Result.(string)
 
 	// 根据块哈希获取块
-	if resp, err = rpc.sendRequest("getblock", []interface {} { blockHash }); err != nil {
-		return []entities.Transaction {}, utils.LogIdxEx(utils.ERROR, 26, err)
+	if resp, err = rpc.sendRequest("getblock", []interface{}{blockHash}); err != nil {
+		return []entities.Transaction{}, utils.LogIdxEx(utils.ERROR, 26, err)
 	}
-	result := resp.Result.(map[string]interface {})
+	result := resp.Result.(map[string]interface{})
 
 	var txs []entities.Transaction
-	for _, txHash := range result["tx"].([]interface {}) {
+	for _, txHash := range result["tx"].([]interface{}) {
 		var txsTmp []entities.Transaction
 		if txsTmp, err = rpc.GetTransaction(txHash.(string)); err != nil {
 			utils.LogMsgEx(utils.ERROR, "找不到指定交易，交易HASH：%s，错误：%v", txHash, err)
@@ -130,7 +130,7 @@ func (rpc *btc) GetTransactions(height uint) ([]entities.Transaction, error) {
 func (rpc *btc) GetCurrentHeight() (uint64, error) {
 	var err error
 	var resp BtcResp
-	if resp, err = rpc.sendRequest("getblockcount", []interface {} {}); err != nil {
+	if resp, err = rpc.sendRequest("getblockcount", []interface{}{}); err != nil {
 		utils.LogIdxEx(utils.ERROR, 26, err)
 		return 0, err
 	}
@@ -138,22 +138,22 @@ func (rpc *btc) GetCurrentHeight() (uint64, error) {
 }
 func (rpc *btc) GetDepositAmount() (map[string]float64, error) {
 	if balance, err := rpc.GetBalance(rpc.account); err != nil {
-		return map[string]float64 {}, err
+		return map[string]float64{}, err
 	} else {
-		return map[string]float64 { rpc.account: balance }, nil
+		return map[string]float64{rpc.account: balance}, nil
 	}
 }
 func (rpc *btc) GetBalance(address string) (float64, error) {
 	var err error
 	var resp BtcResp
-	if resp, err = rpc.sendRequest("getbalance", []interface {} { address }); err != nil {
+	if resp, err = rpc.sendRequest("getbalance", []interface{}{address}); err != nil {
 		return -1, utils.LogIdxEx(utils.ERROR, 26, err)
 	}
 	return resp.Result.(float64) * math.Pow10(-rpc.decimal), nil
 }
 func (rpc *btc) SendTransaction(from string, to string, amount float64, password string) (string, error) {
-	params := []interface {} { from, to }
-	params = append(params, math.Floor(amount * math.Pow10(rpc.decimal)))
+	params := []interface{}{from, to}
+	params = append(params, math.Floor(amount*math.Pow10(rpc.decimal)))
 	if resp, err := rpc.sendRequest("sendfrom", params); err != nil {
 		return "", utils.LogIdxEx(utils.ERROR, 35, err)
 	} else {
@@ -171,17 +171,17 @@ func (rpc *btc) SendTo(to string, amount float64) (string, error) {
 func (rpc *btc) GetNewAddress() (string, error) {
 	var resp BtcResp
 	var err error
-	if resp, err = rpc.sendRequest("getnewaddress", []interface {} { rpc.account }); err != nil {
+	if resp, err = rpc.sendRequest("getnewaddress", []interface{}{rpc.account}); err != nil {
 		return "", utils.LogIdxEx(utils.ERROR, 36, err)
 	}
 	return resp.Result.(string), nil
 }
 func (rpc *btc) ValidAddress(address string) (bool, error) {
-	if resp, err := rpc.sendRequest("validateaddress", []interface {} { address }); err != nil {
+	if resp, err := rpc.sendRequest("validateaddress", []interface{}{address}); err != nil {
 		return false, utils.LogMsgEx(utils.ERROR, "地址验证错误：%v", err)
 	} else {
-		result := utils.JsonObject {
-			Data: resp.Result.(map[string]interface {}),
+		result := utils.JsonObject{
+			Data: resp.Result.(map[string]interface{}),
 		}
 		if !result.Contain("isvalid") {
 			return false, nil
@@ -197,11 +197,11 @@ func (rpc *btc) ValidAddress(address string) (bool, error) {
 func (rpc *btc) GetTransaction(txHash string) ([]entities.Transaction, error) {
 	var err error
 	var resp BtcResp
-	if resp, err = rpc.sendRequest("getrawtransaction", []interface {} { txHash, 1 }); err != nil {
-		return []entities.Transaction {}, utils.LogIdxEx(utils.ERROR, 37, err)
+	if resp, err = rpc.sendRequest("getrawtransaction", []interface{}{txHash, 1}); err != nil {
+		return []entities.Transaction{}, utils.LogIdxEx(utils.ERROR, 37, err)
 	}
-	result := utils.JsonObject {
-		Data: resp.Result.(map[string]interface {}),
+	result := utils.JsonObject{
+		Data: resp.Result.(map[string]interface{}),
 	}
 	blockTime, _ := result.Get("blocktime")
 	blockHash, _ := result.Get("blockhash")
@@ -211,8 +211,8 @@ func (rpc *btc) GetTransaction(txHash string) ([]entities.Transaction, error) {
 		return nil, utils.LogMsgEx(utils.ERROR, "交易不含vout分量")
 	}
 	tmp, _ := result.Get("vout")
-	for _, vout := range tmp.([]interface {}) {
-		vos := utils.JsonObject { vout.(map[string]interface {}) }
+	for _, vout := range tmp.([]interface{}) {
+		vos := utils.JsonObject{vout.(map[string]interface{})}
 		if tmp, err = vos.Get("scriptPubKey.type"); err != nil || tmp.(string) == "nulldata" {
 			continue
 		}
@@ -228,7 +228,7 @@ func (rpc *btc) GetTransaction(txHash string) ([]entities.Transaction, error) {
 		tmp, _ = vos.Get("value")
 		tx.Amount = tmp.(float64) * math.Pow10(-rpc.decimal)
 		tmp, _ = vos.Get("scriptPubKey.addresses")
-		tx.To = tmp.([]interface {})[0].(string)
+		tx.To = tmp.([]interface{})[0].(string)
 		//tx.From
 		tx.BlockHash = blockHash.(string)
 		if !vos.Contain("n") {
@@ -248,11 +248,11 @@ func (rpc *btc) GetTransaction(txHash string) ([]entities.Transaction, error) {
 func (rpc *btc) GetTxExistsHeight(txHash string) (uint64, error) {
 	var err error
 	var resp BtcResp
-	if resp, err = rpc.sendRequest("gettransaction", []interface {} { txHash }); err != nil {
+	if resp, err = rpc.sendRequest("gettransaction", []interface{}{txHash}); err != nil {
 		return 0, utils.LogIdxEx(utils.ERROR, 37, err)
 	}
-	result := utils.JsonObject {
-		Data: resp.Result.(map[string]interface {}),
+	result := utils.JsonObject{
+		Data: resp.Result.(map[string]interface{}),
 	}
 	if !result.Contain("blockindex") {
 		return 0, utils.LogMsgEx(utils.ERROR, "指定交易：%s中不存在块索引", txHash)
@@ -265,7 +265,7 @@ func (rpc *btc) EnableMining(enable bool, speed int) (bool, error) {
 	if enable && !rpc.isMining {
 		go func() {
 			for rpc.isMining {
-				rpc.sendRequest("generate", []interface {} { speed })
+				rpc.sendRequest("generate", []interface{}{speed})
 
 				time.Sleep(1 * time.Second)
 			}

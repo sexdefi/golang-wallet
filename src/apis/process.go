@@ -1,18 +1,18 @@
 package apis
 
 import (
-	"strconv"
 	"encoding/json"
-	"dao"
+	"fmt"
+	"main/src/dao"
 	"net/http"
 	"regexp"
-	"fmt"
+	"strconv"
 )
 
-const processByTxidPath	= "^/api/process/([A-Z]{3,})/txid/([a-zA-Z0-9]{1,})"
-const processByOpidPath	= "^/api/process/([A-Z]{3,})/type/(WITHDRAW|DEPOSIT)/id/([0-9]{1,})"
+const processByTxidPath = "^/api/process/([A-Z]{3,})/txid/([a-zA-Z0-9]{1,})"
+const processByOpidPath = "^/api/process/([A-Z]{3,})/type/(WITHDRAW|DEPOSIT)/id/([0-9]{1,})"
 
-var pcsRouteMap = map[string]interface {} {
+var pcsRouteMap = map[string]interface{}{
 	fmt.Sprintf("%s %s", http.MethodGet, processByTxidPath): queryProcessByTxid,
 	fmt.Sprintf("%s %s", http.MethodGet, processByOpidPath): queryProcessByOpid,
 }
@@ -61,7 +61,7 @@ func queryProcessByOpid(w http.ResponseWriter, req *http.Request) []byte {
 		return ret
 	}
 	asset := params[0]
-	if len(params) <= 2{
+	if len(params) <= 2 {
 		resp.Code = 500
 		resp.Msg = "需要指定查询的操作类型和操作id"
 		ret, _ := json.Marshal(resp)

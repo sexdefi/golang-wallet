@@ -1,13 +1,14 @@
 package dao
 
 import (
-	"sync"
 	"database/sql"
-	"entities"
-	"unsafe"
-	"time"
+	"main/src/entities"
+	"main/src/utils"
 	"strconv"
-	"utils"
+	"sync"
+	"time"
+	"unsafe"
+
 	"github.com/go-sql-driver/mysql"
 )
 
@@ -21,7 +22,7 @@ var _depositDao *depositDao
 func GetDepositDAO() *depositDao {
 	if _depositDao == nil {
 		_depositDao = new(depositDao)
-		_depositDao.Once = sync.Once {}
+		_depositDao.Once = sync.Once{}
 		_depositDao.Once.Do(func() {
 			_depositDao.create("deposit")
 		})
@@ -30,7 +31,7 @@ func GetDepositDAO() *depositDao {
 }
 
 func (d *depositDao) AddScannedDeposit(deposit *entities.BaseDeposit) (int64, error) {
-	var params = []interface {} {
+	var params = []interface{}{
 		deposit.TxHash,
 		deposit.Address,
 		deposit.Amount,
@@ -50,7 +51,7 @@ func (d *depositDao) AddStableDeposit(deposit *entities.BaseDeposit) (int64, err
 	if deposit.CreateTime.Year() < 1000 {
 		deposit.CreateTime = time.Now()
 	}
-	return insertTemplate((*baseDao)(unsafe.Pointer(d)), "AddStableDeposit", []interface {} {
+	return insertTemplate((*baseDao)(unsafe.Pointer(d)), "AddStableDeposit", []interface{}{
 		deposit.TxHash,
 		deposit.Address,
 		deposit.Amount,
@@ -63,8 +64,8 @@ func (d *depositDao) AddStableDeposit(deposit *entities.BaseDeposit) (int64, err
 
 func (d *depositDao) GetUnstableDeposit(asset string) ([]entities.BaseDeposit, error) {
 	bd := (*baseDao)(unsafe.Pointer(d))
-	conds := []interface {} { asset }
-	var result []map[string]interface {}
+	conds := []interface{}{asset}
+	var result []map[string]interface{}
 	var err error
 	if result, err = selectTemplate(bd, "GetUnstableDeposit", conds); err != nil {
 		return nil, err
@@ -90,14 +91,14 @@ func (d *depositDao) GetUnstableDeposit(asset string) ([]entities.BaseDeposit, e
 
 func (d *depositDao) DepositIntoStable(txHash string) (int64, error) {
 	return updatePartsTemplate((*baseDao)(unsafe.Pointer(d)), "DepositIntoStable",
-		[]interface {} { txHash }, nil)
+		[]interface{}{txHash}, nil)
 }
 
 func (d *depositDao) GetDepositId(txHash string) (int, error) {
-	var result []map[string]interface {}
+	var result []map[string]interface{}
 	var err error
 	bd := (*baseDao)(unsafe.Pointer(d))
-	conds := []interface {} { txHash }
+	conds := []interface{}{txHash}
 	if result, err = selectTemplate(bd, "GetDepositId", conds); err != nil {
 		return -1, err
 	}
@@ -105,13 +106,13 @@ func (d *depositDao) GetDepositId(txHash string) (int, error) {
 	if len(result) != 1 {
 		return -1, utils.LogMsgEx(utils.ERROR, "找不到交易：%s的充币ID", txHash)
 	}
-	depositId := (int) (*(result[0]["id"].(*int32)))
+	depositId := (int)(*(result[0]["id"].(*int32)))
 	return depositId, nil
 }
 
-func (d *depositDao) GetDeposits(conds map[string]interface {}) ([]entities.DatabaseDeposit, error) {
+func (d *depositDao) GetDeposits(conds map[string]interface{}) ([]entities.DatabaseDeposit, error) {
 	bd := (*baseDao)(unsafe.Pointer(d))
-	var result []map[string]interface {}
+	var result []map[string]interface{}
 	var err error
 	if result, err = selectPartsTemplate(bd, "GetDeposits", conds); err != nil {
 		return nil, err
@@ -141,8 +142,8 @@ func (d *depositDao) GetDeposits(conds map[string]interface {}) ([]entities.Data
 
 func (d *depositDao) CheckExists(txHash string) (bool, error) {
 	bd := (*baseDao)(unsafe.Pointer(d))
-	conds := []interface {} { txHash }
-	var result []map[string]interface {}
+	conds := []interface{}{txHash}
+	var result []map[string]interface{}
 	var err error
 	if result, err = selectTemplate(bd, "CheckExists", conds); err != nil {
 		return false, err
@@ -152,7 +153,7 @@ func (d *depositDao) CheckExists(txHash string) (bool, error) {
 		return false, utils.LogMsgEx(utils.ERROR, "数据库查询结果异常：COUNT返回无结果")
 	}
 	var ok bool
-	var tmp interface {}
+	var tmp interface{}
 	if tmp, ok = result[0]["num"]; !ok {
 		return false, utils.LogMsgEx(utils.ERROR, "COUNT结果没有指定键值：num")
 	}

@@ -1,23 +1,24 @@
 package services
 
 import (
-	"entities"
+	"main/src/dao"
+	"main/src/entities"
+	"main/src/rpcs"
+	"main/src/utils"
 	"sync"
-	"utils"
-	"dao"
-	"rpcs"
 )
 
-/***
-	等待稳定服务：接收来自充值和提币的交易，等待其稳定后做后续操作
-	子协程（startWaitForStable）：等待交易进入稳定状态
-	子协程（waitForUnstableTransaction）：等待来自充值和提币的交易
- */
+/*
+**
+等待稳定服务：接收来自充值和提币的交易，等待其稳定后做后续操作
+子协程（startWaitForStable）：等待交易进入稳定状态
+子协程（waitForUnstableTransaction）：等待来自充值和提币的交易
+*/
 type stableService struct {
 	BaseService
 	sync.Once
-	waitForStableTxs []entities.Transaction
-	waitTxsCounter map[string]uint
+	waitForStableTxs     []entities.Transaction
+	waitTxsCounter       map[string]uint
 	waitForStableTxsLock *sync.Mutex
 }
 
@@ -26,7 +27,7 @@ var _stableService *stableService
 func GetStableService() *stableService {
 	if _stableService == nil {
 		_stableService = new(stableService)
-		_stableService.Once = sync.Once {}
+		_stableService.Once = sync.Once{}
 		_stableService.Once.Do(func() {
 			_stableService.create()
 		})
@@ -69,7 +70,7 @@ func (service *stableService) AfterTurn(s *utils.Status, srcStt int) {
 	}
 }
 
-func (service *stableService) loadIncompleteTransactions() error  {
+func (service *stableService) loadIncompleteTransactions() error {
 	coinSetting := utils.GetConfig().GetCoinSettings()
 	var err error
 	var deposits []entities.BaseDeposit
@@ -108,20 +109,20 @@ func (service *stableService) startWaitForStable() {
 			}
 
 			stableHeight := uint64(coinSet.Stable)
-			if curHeight >= tx.Height + stableHeight {
+			if curHeight >= tx.Height+stableHeight {
 				utils.LogMsgEx(utils.INFO, "交易：%s已进入稳定状态", tx.TxHash)
 
 				if err = TxIntoStable(tx.TxHash, tx.Asset); err != nil {
 					continue
 				}
 
-				service.waitForStableTxs = append(service.waitForStableTxs[:i], service.waitForStableTxs[i + 1:]...)
+				service.waitForStableTxs = append(service.waitForStableTxs[:i], service.waitForStableTxs[i+1:]...)
 				delete(service.waitTxsCounter, tx.TxHash)
 				break
 			} else {
-				if service.waitTxsCounter[tx.TxHash] % 20 == 0 {
+				if service.waitTxsCounter[tx.TxHash]%20 == 0 {
 					utils.LogMsgEx(utils.INFO, "交易：%s等待稳定，%d/%d",
-						tx.TxHash, curHeight, tx.Height + stableHeight)
+						tx.TxHash, curHeight, tx.Height+stableHeight)
 				}
 				service.waitTxsCounter[tx.TxHash]++
 			}
@@ -136,7 +137,7 @@ func (service *stableService) waitForUnstableTransaction() {
 	for err == nil && service.status.Current() == START {
 		var tx entities.Transaction
 		var ok bool
-		if tx, ok = <- toNotifySig; !ok {
+		if tx, ok = <-toNotifySig; !ok {
 			break
 		}
 		utils.LogMsgEx(utils.INFO, "接收到一笔需等待的交易：%v", tx)

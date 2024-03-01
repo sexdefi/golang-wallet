@@ -1,10 +1,10 @@
 package services
 
 import (
+	"main/src/dao"
+	"main/src/rpcs"
+	"main/src/utils"
 	"sync"
-	"utils"
-	"rpcs"
-	"dao"
 )
 
 type heightService struct {
@@ -17,7 +17,7 @@ var _heightService *heightService
 func GetHeightService() *heightService {
 	if _heightService == nil {
 		_heightService = new(heightService)
-		_heightService.Once = sync.Once {}
+		_heightService.Once = sync.Once{}
 		_heightService.Once.Do(func() {
 			_heightService.create()
 		})

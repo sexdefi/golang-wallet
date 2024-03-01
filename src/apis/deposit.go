@@ -1,23 +1,23 @@
 package apis
 
 import (
+	"encoding/json"
+	"fmt"
+	"main/src/dao"
+	"main/src/entities"
+	"main/src/rpcs"
 	"net/http"
 	"regexp"
-	"rpcs"
-	"encoding/json"
-	"dao"
-	"entities"
-	"fmt"
 )
 
-const newAddressPath	= "^/api/deposit/([A-Z]{3,})/address$"
-const getHeightPath		= "^/api/deposit/([A-Z]{3,})/height$"
-const getDepositsPath	= "^/api/deposit/([A-Z]{3,})$"
+const newAddressPath = "^/api/deposit/([A-Z]{3,})/address$"
+const getHeightPath = "^/api/deposit/([A-Z]{3,})/height$"
+const getDepositsPath = "^/api/deposit/([A-Z]{3,})$"
 
-var dpRouteMap = map[string]interface {} {
-	fmt.Sprintf("%s %s", http.MethodGet, newAddressPath):	newAddress,
-	fmt.Sprintf("%s %s", http.MethodGet, getHeightPath):	queryHeight,
-	fmt.Sprintf("%s %s", http.MethodGet, getDepositsPath):	getDeposits,
+var dpRouteMap = map[string]interface{}{
+	fmt.Sprintf("%s %s", http.MethodGet, newAddressPath):  newAddress,
+	fmt.Sprintf("%s %s", http.MethodGet, getHeightPath):   queryHeight,
+	fmt.Sprintf("%s %s", http.MethodGet, getDepositsPath): getDeposits,
 }
 
 func newAddress(w http.ResponseWriter, req *http.Request) []byte {
@@ -95,7 +95,7 @@ func getDeposits(w http.ResponseWriter, req *http.Request) []byte {
 		return ret
 	}
 
-	conds := make(map[string]interface {})
+	conds := make(map[string]interface{})
 	conds["asset"] = params[0]
 	var result []entities.DatabaseDeposit
 	var err error
@@ -103,7 +103,7 @@ func getDeposits(w http.ResponseWriter, req *http.Request) []byte {
 		conds["tx_hash"] = txHash
 
 		// txhash是唯一的，所以指定的话，直接返回
-		if result ,err = dao.GetDepositDAO().GetDeposits(conds); err != nil {
+		if result, err = dao.GetDepositDAO().GetDeposits(conds); err != nil {
 			resp.Code = 500
 			resp.Msg = err.Error()
 			ret, _ := json.Marshal(resp)
@@ -118,7 +118,7 @@ func getDeposits(w http.ResponseWriter, req *http.Request) []byte {
 		conds["address"] = address
 	}
 
-	if result ,err = dao.GetDepositDAO().GetDeposits(conds); err != nil {
+	if result, err = dao.GetDepositDAO().GetDeposits(conds); err != nil {
 		resp.Code = 500
 		resp.Msg = err.Error()
 		ret, _ := json.Marshal(resp)

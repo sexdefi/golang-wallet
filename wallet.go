@@ -1,17 +1,17 @@
 package main
 
 import (
-	"utils"
-	"services"
-	"unsafe"
-	"apis"
-	"log"
 	"fmt"
+	"log"
+	"main/src/apis"
+	"main/src/services"
+	"main/src/utils"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
-	"net/http"
+	"unsafe"
 )
 
 func initServices(svcs []*services.BaseService) {
@@ -36,7 +36,7 @@ func safeExit() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, os.Kill)
 
-	<- c
+	<-c
 	utils.LogMsgEx(utils.WARNING, "正在安全退出", nil)
 
 	svcStts := make(map[string]int)
@@ -44,7 +44,9 @@ func safeExit() {
 		for _, svc := range services.GetInitedServices() {
 			if !svc.IsDestroy() {
 				if stt, ok := svcStts[svc.Name()]; ok {
-					if stt == svc.CurrentStatus() { continue }
+					if stt == svc.CurrentStatus() {
+						continue
+					}
 				}
 				utils.LogMsgEx(utils.WARNING, "%s服务还未安全退出，处于状态：%s",
 					svc.Name(), services.ServiceStatus[svc.CurrentStatus()])
@@ -62,16 +64,16 @@ func safeExit() {
 	log.Println("退出完毕")
 }
 
-var depositServices = []*services.BaseService {
+var depositServices = []*services.BaseService{
 	(*services.BaseService)(unsafe.Pointer(services.GetDepositService())),
 	(*services.BaseService)(unsafe.Pointer(services.GetStableService())),
 }
 
-var collectServices = []*services.BaseService {
+var collectServices = []*services.BaseService{
 	(*services.BaseService)(unsafe.Pointer(services.GetCollectService())),
 }
 
-var withdrawServices = []*services.BaseService {
+var withdrawServices = []*services.BaseService{
 	(*services.BaseService)(unsafe.Pointer(services.GetHeightService())),
 	(*services.BaseService)(unsafe.Pointer(services.GetWithdrawService())),
 	(*services.BaseService)(unsafe.Pointer(services.GetStableService())),
@@ -89,9 +91,12 @@ func main() {
 	} else {
 		for _, svc := range bsSet.Services {
 			switch svc {
-			case "deposit": initServices(depositServices)
-			case "collect": initServices(collectServices)
-			case "withdraw": initServices(withdrawServices)
+			case "deposit":
+				initServices(depositServices)
+			case "collect":
+				initServices(collectServices)
+			case "withdraw":
+				initServices(withdrawServices)
 			}
 		}
 	}

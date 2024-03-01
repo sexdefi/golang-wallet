@@ -1,24 +1,25 @@
 package services
 
 import (
-	"sync"
-	"utils"
-	"dao"
-	"rpcs"
-	"entities"
-	"time"
+	"main/src/dao"
+	"main/src/entities"
+	"main/src/rpcs"
+	"main/src/utils"
 	"strconv"
+	"sync"
+	"time"
 )
 
-/***
-	充值服务：启动子协程扫描链，过滤充值交易，并提交到notify服务等待其稳定
-	子协程（startScanChain）：扫描区块，找到充值交易
- */
+/*
+**
+充值服务：启动子协程扫描链，过滤充值交易，并提交到notify服务等待其稳定
+子协程（startScanChain）：扫描区块，找到充值交易
+*/
 type depositService struct {
 	BaseService
 	sync.Once
 	addresses []string
-	height uint64
+	height    uint64
 }
 
 var _depositService *depositService
@@ -26,7 +27,7 @@ var _depositService *depositService
 func GetDepositService() *depositService {
 	if _depositService == nil {
 		_depositService = new(depositService)
-		_depositService.Once = sync.Once {}
+		_depositService.Once = sync.Once{}
 		_depositService.Once.Do(func() {
 			_depositService.create()
 		})
@@ -105,8 +106,8 @@ func (service *depositService) startScanChain() {
 			utils.LogMsgEx(utils.ERROR, "获取块高失败：%v", err)
 			continue
 		}
-		if curHeight - service.height <= /*uint64(coinSet.Stable)*/0 {
-			if acc % 500 == 0 {
+		if curHeight-service.height <= /*uint64(coinSet.Stable)*/ 0 {
+			if acc%500 == 0 {
 				utils.LogMsgEx(utils.INFO, "已达到最高块高", nil)
 			}
 			acc++
@@ -163,17 +164,17 @@ func (service *depositService) startScanChain() {
 				utils.LogMsgEx(utils.ERROR, "获取充值交易id失败：%v", err)
 				continue
 			}
-			if _, err = dao.GetProcessDAO().SaveProcess(&entities.DatabaseProcess {
-				BaseProcess: entities.BaseProcess {
-					Id: id,
-					TxHash: deposit.TxHash,
-					Asset: deposit.Asset,
-					Type: entities.DEPOSIT,
-					Process: entities.INCHAIN,
+			if _, err = dao.GetProcessDAO().SaveProcess(&entities.DatabaseProcess{
+				BaseProcess: entities.BaseProcess{
+					Id:         id,
+					TxHash:     deposit.TxHash,
+					Asset:      deposit.Asset,
+					Type:       entities.DEPOSIT,
+					Process:    entities.INCHAIN,
 					Cancelable: false,
 				},
-				Height: deposit.Height,
-				CurrentHeight: curHeight,
+				Height:         deposit.Height,
+				CurrentHeight:  curHeight,
 				CompleteHeight: deposit.Height + uint64(coinSet.Stable),
 				LastUpdateTime: time.Now(),
 			}); err != nil {
@@ -182,7 +183,7 @@ func (service *depositService) startScanChain() {
 			}
 
 			// 如果已经达到稳定块高，直接存入数据库
-			if deposit.Height + uint64(coinSet.Stable) >= curHeight {
+			if deposit.Height+uint64(coinSet.Stable) >= curHeight {
 				utils.LogMsgEx(utils.INFO, "交易（%s）进入稳定状态", deposit.TxHash)
 
 				if err = TxIntoStable(tx.TxHash, tx.Asset); err != nil {
@@ -197,7 +198,7 @@ func (service *depositService) startScanChain() {
 		}
 
 		// 持久化高度到height表
-		if service.height % 20 == 0 {
+		if service.height%20 == 0 {
 			if _, err = dao.GetHeightDAO().UpdateHeight(coinSet.Name, service.height); err != nil {
 				utils.LogMsgEx(utils.ERROR, "更新块高失败：%v", err)
 				continue

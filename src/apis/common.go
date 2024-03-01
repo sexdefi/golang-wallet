@@ -1,14 +1,14 @@
 package apis
 
 import (
-	"net/http"
-	"regexp"
 	"encoding/json"
 	"fmt"
-	"utils"
-	"strings"
-	"reflect"
+	"main/src/utils"
 	"net"
+	"net/http"
+	"reflect"
+	"regexp"
+	"strings"
 )
 
 const WithdrawPath = "/api/withdraw"
@@ -21,17 +21,17 @@ const TestPath = "/api/test"
 const TstLen = len(TestPath)
 
 type RespVO struct {
-	Code int			`json:"code"`
-	Msg string			`json:"message"`
-	Data interface {}	`json:"data"`
+	Code int         `json:"code"`
+	Msg  string      `json:"message"`
+	Data interface{} `json:"data"`
 }
 
 type api struct {
-	Func interface {}
+	Func   interface{}
 	Method string
 }
 
-func subHandler(w http.ResponseWriter, req *http.Request, routeMap map[string]interface {}) {
+func subHandler(w http.ResponseWriter, req *http.Request, routeMap map[string]interface{}) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT ,DELETE")
@@ -50,9 +50,11 @@ func subHandler(w http.ResponseWriter, req *http.Request, routeMap map[string]in
 		method := reqGrp[0]
 		path := reqGrp[1]
 		re := regexp.MustCompile(path)
-		if !re.MatchString(req.RequestURI) { continue }
+		if !re.MatchString(req.RequestURI) {
+			continue
+		}
 		if strings.ToUpper(req.Method) == method {
-			a := reflect.ValueOf(handle).Call([]reflect.Value {
+			a := reflect.ValueOf(handle).Call([]reflect.Value{
 				reflect.ValueOf(w), reflect.ValueOf(req),
 			})
 			w.Write(a[0].Bytes())
@@ -71,7 +73,7 @@ func subHandler(w http.ResponseWriter, req *http.Request, routeMap map[string]in
 	var resp RespVO
 	resp.Code = 404
 	resp.Msg = fmt.Sprintf(utils.GetIdxMsg("W0037"), req.RequestURI)
-	respJSON , _:= json.Marshal(resp)
+	respJSON, _ := json.Marshal(resp)
 	w.Write(respJSON)
 }
 
@@ -91,7 +93,7 @@ func HttpHandler(w http.ResponseWriter, req *http.Request) {
 		var resp RespVO
 		resp.Code = 404
 		resp.Msg = fmt.Sprintf(utils.GetIdxMsg("W0037"), req.RequestURI)
-		respJSON , _:= json.Marshal(resp)
+		respJSON, _ := json.Marshal(resp)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.Write(respJSON)
 	}

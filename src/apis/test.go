@@ -1,28 +1,28 @@
 package apis
 
 import (
-	"utils"
 	"encoding/json"
-	"io/ioutil"
-	"rpcs"
 	"fmt"
+	"io/ioutil"
+	"main/src/rpcs"
+	"main/src/utils"
 	"net/http"
 	"regexp"
 )
 
-const transferPath		= "^/api/test/([A-Z]{3,})/transfer$"
-const miningPath		= "^/api/test/([A-Z]{3,})/mining$"
-	
-var tstRouteMap = map[string]interface {} {
-	fmt.Sprintf("%s %s", http.MethodPost, transferPath):	transfer,
-	fmt.Sprintf("%s %s", http.MethodPut, miningPath):		doMining,
-	fmt.Sprintf("%s %s", http.MethodGet, miningPath):		isMining,
+const transferPath = "^/api/test/([A-Z]{3,})/transfer$"
+const miningPath = "^/api/test/([A-Z]{3,})/mining$"
+
+var tstRouteMap = map[string]interface{}{
+	fmt.Sprintf("%s %s", http.MethodPost, transferPath): transfer,
+	fmt.Sprintf("%s %s", http.MethodPut, miningPath):    doMining,
+	fmt.Sprintf("%s %s", http.MethodGet, miningPath):    isMining,
 }
 
 type transactionReq struct {
-	From string		`json:"from"`
-	To string		`json:"to"`
-	Amount float64	`json:"amount"`
+	From   string  `json:"from"`
+	To     string  `json:"to"`
+	Amount float64 `json:"amount"`
 }
 
 func transfer(w http.ResponseWriter, req *http.Request) []byte {
@@ -77,8 +77,8 @@ func transfer(w http.ResponseWriter, req *http.Request) []byte {
 }
 
 type miningReq struct {
-	Enable bool	`json:"enable"`
-	Speed int	`json:"speed"`
+	Enable bool `json:"enable"`
+	Speed  int  `json:"speed"`
 }
 
 func doMining(w http.ResponseWriter, req *http.Request) []byte {

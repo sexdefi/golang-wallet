@@ -1,32 +1,33 @@
 package dao
 
 import (
-	"sync"
-	"entities"
-	"utils"
-	"databases"
-	"github.com/go-redis/redis"
-	"time"
-	"fmt"
-	"strings"
-	"encoding/json"
-	"net/http"
 	"bytes"
+	"encoding/json"
+	"fmt"
+	"main/src/databases"
+	"main/src/entities"
+	"main/src/utils"
+	"net/http"
 	"strconv"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/go-redis/redis"
 )
 
-var _timeFormat = map[string]string {
-	"ANSIC":		time.ANSIC,
-	"UnixDate":		time.UnixDate,
-	"RubyDate":		time.RubyDate,
-	"RFC822":		time.RFC822,
-	"RFC822Z":		time.RFC822Z,
-	"RFC850":		time.RFC850,
-	"RFC1123":		time.RFC1123,
-	"RFC1123Z":		time.RFC1123Z,
-	"RFC3339":		time.RFC3339,
-	"RFC3339Nano":	time.RFC3339Nano,
-	"Kitchen":		time.Kitchen,
+var _timeFormat = map[string]string{
+	"ANSIC":       time.ANSIC,
+	"UnixDate":    time.UnixDate,
+	"RubyDate":    time.RubyDate,
+	"RFC822":      time.RFC822,
+	"RFC822Z":     time.RFC822Z,
+	"RFC850":      time.RFC850,
+	"RFC1123":     time.RFC1123,
+	"RFC1123Z":    time.RFC1123Z,
+	"RFC3339":     time.RFC3339,
+	"RFC3339Nano": time.RFC3339Nano,
+	"Kitchen":     time.Kitchen,
 }
 
 type processDao struct {
@@ -39,7 +40,7 @@ var _processDao *processDao
 func GetProcessDAO() *processDao {
 	if _processDao == nil {
 		_processDao = new(processDao)
-		_processDao.Once = sync.Once {}
+		_processDao.Once = sync.Once{}
 		_processDao.Once.Do(func() {})
 	}
 	return _processDao
@@ -141,7 +142,7 @@ func (d *processDao) SaveProcess(process *entities.DatabaseProcess) (int64, erro
 	}
 	// 如果交易完成，会持久化到数据库，redis挂1天
 	if process.Process == entities.FINISH {
-		cli.Expire(key, 24 * time.Hour)
+		cli.Expire(key, 24*time.Hour)
 	}
 	// 发布这条交易的进度键
 	var procs entities.DatabaseProcess
@@ -193,7 +194,7 @@ func (d *processDao) SaveProcess(process *entities.DatabaseProcess) (int64, erro
 			return 0, utils.LogMsgEx(utils.ERROR, "构建请求失败：%v", err)
 		}
 		req.Header.Add("Content-Type", "application/json")
-		client := &http.Client {}
+		client := &http.Client{}
 		if _, err := client.Do(req); err != nil {
 			return 0, utils.LogMsgEx(utils.ERROR, "发送回调请求：%v", err)
 		}
@@ -218,26 +219,26 @@ func (d *processDao) queryProcess(key string) (entities.DatabaseProcess, error) 
 	}
 
 	var id int64
-	id, err					= cli.HGet(key, "id").Int64()
-	ret.Id					= int(id)
-	ret.TxHash, err			= cli.HGet(key, "tx_hash").Result()
-	ret.Asset, err			= cli.HGet(key, "asset").Result()
-	ret.Type, err			= cli.HGet(key, "type").Result()
-	ret.Process, err		= cli.HGet(key, "process").Result()
+	id, err = cli.HGet(key, "id").Int64()
+	ret.Id = int(id)
+	ret.TxHash, err = cli.HGet(key, "tx_hash").Result()
+	ret.Asset, err = cli.HGet(key, "asset").Result()
+	ret.Type, err = cli.HGet(key, "type").Result()
+	ret.Process, err = cli.HGet(key, "process").Result()
 	var strCancelable string
-	strCancelable, err		= cli.HGet(key, "cancelable").Result()
-	ret.Cancelable			= strCancelable != "0" && strCancelable != "false"
-	ret.Height, err			= cli.HGet(key, "height").Uint64()
-	ret.CurrentHeight, err	= cli.HGet(key, "current_height").Uint64()
-	ret.CompleteHeight, err	= cli.HGet(key, "complete_height").Uint64()
+	strCancelable, err = cli.HGet(key, "cancelable").Result()
+	ret.Cancelable = strCancelable != "0" && strCancelable != "false"
+	ret.Height, err = cli.HGet(key, "height").Uint64()
+	ret.CurrentHeight, err = cli.HGet(key, "current_height").Uint64()
+	ret.CompleteHeight, err = cli.HGet(key, "complete_height").Uint64()
 	var strLstUpdTm string
-	strLstUpdTm, err		= cli.HGet(key, "last_update_time").Result()
+	strLstUpdTm, err = cli.HGet(key, "last_update_time").Result()
 	idTmFmt := utils.GetConfig().GetSubsSettings().Redis.TimeFormat
 	var ok bool
 	if idTmFmt, ok = _timeFormat[idTmFmt]; !ok {
 		idTmFmt = _timeFormat["RFC3339"]
 	}
-	ret.LastUpdateTime, err	= time.Parse(idTmFmt, strLstUpdTm)
+	ret.LastUpdateTime, err = time.Parse(idTmFmt, strLstUpdTm)
 	if err != nil {
 		return ret, utils.LogMsgEx(utils.ERROR, "获取进度失败：%v", err)
 	} else {

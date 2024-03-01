@@ -1,16 +1,16 @@
 package dao
 
 import (
-	"os"
 	"bufio"
-	"strings"
-	"io"
 	"database/sql"
-	"databases"
 	"errors"
 	"fmt"
-	"utils"
+	"io"
+	"main/src/databases"
+	"main/src/utils"
+	"os"
 	"reflect"
+	"strings"
 )
 
 type baseDao struct {
@@ -49,7 +49,7 @@ func loadSQL(sqlFile string) (map[string]string, error) {
 	defer file.Close()
 
 	rd := bufio.NewReader(file)
-	sqlMap := map[string]string {}
+	sqlMap := map[string]string{}
 	var key string
 	var fmrKey string
 	for {
@@ -84,7 +84,7 @@ func loadSQL(sqlFile string) (map[string]string, error) {
 	return sqlMap, nil
 }
 
-func insertTemplate(d *baseDao, sqlName string, props []interface {}) (int64, error) {
+func insertTemplate(d *baseDao, sqlName string, props []interface{}) (int64, error) {
 	var db *sql.DB
 	var err error
 	if db, err = databases.ConnectMySQL(); err != nil {
@@ -133,7 +133,7 @@ func saveTemplate(d *baseDao, selSqlName string, istSqlName string, updSqlName s
 				panic(utils.LogMsgEx(utils.ERROR, "键值无法一一对应", nil))
 			}
 
-			params := make(map[string]interface {})
+			params := make(map[string]interface{})
 			for i, k := range keys {
 				params[k] = props[i]
 			}
@@ -165,7 +165,7 @@ func saveTemplate(d *baseDao, selSqlName string, istSqlName string, updSqlName s
 
 		var content []string
 		for _, key := range keys {
-			content = append(content, key + "=?")
+			content = append(content, key+"=?")
 		}
 		updateSQL = fmt.Sprintf(updateSQL, strings.Join(content, ","))
 
@@ -176,7 +176,7 @@ func saveTemplate(d *baseDao, selSqlName string, istSqlName string, updSqlName s
 	return result.RowsAffected()
 }
 
-func selectTemplate(d *baseDao, sqlName string, conds []interface {}) ([]map[string]interface {}, error) {
+func selectTemplate(d *baseDao, sqlName string, conds []interface{}) ([]map[string]interface{}, error) {
 	var db *sql.DB
 	var err error
 	if db, err = databases.ConnectMySQL(); err != nil {
@@ -196,14 +196,14 @@ func selectTemplate(d *baseDao, sqlName string, conds []interface {}) ([]map[str
 	}
 	defer rows.Close()
 
-	var result []map[string]interface {}
+	var result []map[string]interface{}
 	for rows.Next() {
-		var entity = make(map[string]interface {})
+		var entity = make(map[string]interface{})
 		var colTyps []*sql.ColumnType
 		if colTyps, err = rows.ColumnTypes(); err != nil {
 			panic(utils.LogIdxEx(utils.ERROR, 14, err))
 		}
-		var params []interface {}
+		var params []interface{}
 		for _, colTyp := range colTyps {
 			entity[colTyp.Name()] = reflect.New(colTyp.ScanType()).Interface()
 			params = append(params, entity[colTyp.Name()])
@@ -221,7 +221,7 @@ func selectTemplate(d *baseDao, sqlName string, conds []interface {}) ([]map[str
 	return result, nil
 }
 
-func selectPartsTemplate(d *baseDao, sqlName string, conds map[string]interface{}) ([]map[string]interface {}, error) {
+func selectPartsTemplate(d *baseDao, sqlName string, conds map[string]interface{}) ([]map[string]interface{}, error) {
 	var db *sql.DB
 	var err error
 	if db, err = databases.ConnectMySQL(); err != nil {
@@ -237,7 +237,7 @@ func selectPartsTemplate(d *baseDao, sqlName string, conds map[string]interface{
 
 	var rows *sql.Rows
 	var keys []string
-	var vals []interface {}
+	var vals []interface{}
 	for key, val := range conds {
 		keys = append(keys, fmt.Sprintf("%s=?", key))
 		vals = append(vals, val)
@@ -248,14 +248,14 @@ func selectPartsTemplate(d *baseDao, sqlName string, conds map[string]interface{
 	}
 	defer rows.Close()
 
-	var result []map[string]interface {}
+	var result []map[string]interface{}
 	for rows.Next() {
-		var entity = make(map[string]interface {})
+		var entity = make(map[string]interface{})
 		var colTyps []*sql.ColumnType
 		if colTyps, err = rows.ColumnTypes(); err != nil {
 			panic(utils.LogIdxEx(utils.ERROR, 14, err))
 		}
-		var params []interface {}
+		var params []interface{}
 		for _, colTyp := range colTyps {
 			entity[colTyp.Name()] = reflect.New(colTyp.ScanType()).Interface()
 			params = append(params, entity[colTyp.Name()])
@@ -273,7 +273,7 @@ func selectPartsTemplate(d *baseDao, sqlName string, conds map[string]interface{
 	return result, nil
 }
 
-func updateTemplate(d *baseDao, sqlName string, conds []interface {}, props []interface {}) (int64, error) {
+func updateTemplate(d *baseDao, sqlName string, conds []interface{}, props []interface{}) (int64, error) {
 	var db *sql.DB
 	var err error
 	if db, err = databases.ConnectMySQL(); err != nil {
@@ -301,7 +301,7 @@ func updateTemplate(d *baseDao, sqlName string, conds []interface {}, props []in
 	}
 }
 
-func updatePartsTemplate(d *baseDao, sqlName string, conds []interface {}, props map[string]interface{}) (int64, error) {
+func updatePartsTemplate(d *baseDao, sqlName string, conds []interface{}, props map[string]interface{}) (int64, error) {
 	var db *sql.DB
 	var err error
 	if db, err = databases.ConnectMySQL(); err != nil {
@@ -324,9 +324,9 @@ func updatePartsTemplate(d *baseDao, sqlName string, conds []interface {}, props
 	}
 
 	var content []string
-	var values []interface {}
+	var values []interface{}
 	for k, v := range props {
-		content = append(content, k + "=?")
+		content = append(content, k+"=?")
 		values = append(values, v)
 	}
 
@@ -337,7 +337,7 @@ func updatePartsTemplate(d *baseDao, sqlName string, conds []interface {}, props
 	return result.RowsAffected()
 }
 
-func insertPartsTemplate(d *baseDao, sqlName string, props map[string]interface {}) (int64, error) {
+func insertPartsTemplate(d *baseDao, sqlName string, props map[string]interface{}) (int64, error) {
 	var db *sql.DB
 	var err error
 	if db, err = databases.ConnectMySQL(); err != nil {
@@ -353,7 +353,7 @@ func insertPartsTemplate(d *baseDao, sqlName string, props map[string]interface 
 
 	var keys []string
 	var vals []string
-	var propts []interface {}
+	var propts []interface{}
 	for k, v := range props {
 		keys = append(keys, k)
 		vals = append(vals, "?")
@@ -368,7 +368,7 @@ func insertPartsTemplate(d *baseDao, sqlName string, props map[string]interface 
 	return result.RowsAffected()
 }
 
-func deleteTemplate(d *baseDao, sqlName string, conds []interface {}) (int64, error) {
+func deleteTemplate(d *baseDao, sqlName string, conds []interface{}) (int64, error) {
 	var db *sql.DB
 	var err error
 	if db, err = databases.ConnectMySQL(); err != nil {

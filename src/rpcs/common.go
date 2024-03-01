@@ -1,7 +1,7 @@
 package rpcs
 
 import (
-	"entities"
+	"main/src/entities"
 	"reflect"
 )
 
@@ -22,7 +22,6 @@ type Rpc interface {
 }
 
 type rpc struct {
-
 }
 
 var __rpc = new(rpc)
@@ -32,7 +31,7 @@ func GetRPC(name string) Rpc {
 }
 
 type RequestBody struct {
-	Method string			`json:"method"`
-	Params []interface{}	`json:"params"`
-	Id string				`json:"id"`
+	Method string        `json:"method"`
+	Params []interface{} `json:"params"`
+	Id     string        `json:"id"`
 }

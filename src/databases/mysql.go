@@ -1,16 +1,17 @@
 package databases
 
 import (
-	"fmt"
 	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
-	"utils"
-	"strings"
+	"fmt"
+	"main/src/utils"
 	"net/url"
+	"strings"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
-var PARAMS = []string {
+var PARAMS = []string{
 	"charset=utf8",
 	"tls=skip-verify",
 	"parseTime=true",

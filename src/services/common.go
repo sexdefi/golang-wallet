@@ -1,12 +1,12 @@
 package services
 
 import (
-	"dao"
-	"entities"
-	"utils"
-	"unsafe"
-	"rpcs"
 	"fmt"
+	"main/src/dao"
+	"main/src/entities"
+	"main/src/rpcs"
+	"main/src/utils"
+	"unsafe"
 )
 
 const (
@@ -18,17 +18,17 @@ const (
 	START
 )
 
-var ServiceStatus = []string {
+var ServiceStatus = []string{
 	"DESTORY", "STOP", "NONE", "CREATE", "INIT", "START",
 }
 
 type BaseService struct {
 	status utils.Status
-	name string
+	name   string
 }
 
 func (service *BaseService) create() error {
-	service.status.Init([]int { DESTORY, CREATE, INIT, START, STOP })
+	service.status.Init([]int{DESTORY, CREATE, INIT, START, STOP})
 	return nil
 }
 

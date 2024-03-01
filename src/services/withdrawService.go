@@ -1,27 +1,28 @@
 package services
 
 import (
+	"main/src/dao"
+	"main/src/entities"
+	"main/src/rpcs"
+	"main/src/utils"
 	"sync"
-	"utils"
-	"entities"
-	"dao"
-	"rpcs"
 	"time"
 )
 
-/***
-	提币服务：接收来自API的提币操作，并启动子协程等待其入链后交给通知服务
-	子协程（waitForWithdraw）：等待从API发来的提币请求
-	子协程（sendTransactions）：发送列队中的提币请求
-	子协程（waitForInchain）：查询发起的提币交易，检查是否入链
- */
+/*
+**
+提币服务：接收来自API的提币操作，并启动子协程等待其入链后交给通知服务
+子协程（waitForWithdraw）：等待从API发来的提币请求
+子协程（sendTransactions）：发送列队中的提币请求
+子协程（waitForInchain）：查询发起的提币交易，检查是否入链
+*/
 type withdrawService struct {
 	BaseService
 	sync.Once
-	wdsToSend []entities.BaseWithdraw
-	sendDelayList map[int]int
-	wdsToSendLock *sync.RWMutex
-	wdsToInchain map[string]uint
+	wdsToSend        []entities.BaseWithdraw
+	sendDelayList    map[int]int
+	wdsToSendLock    *sync.RWMutex
+	wdsToInchain     map[string]uint
 	wdsToInchainLock *sync.RWMutex
 }
 
@@ -30,7 +31,7 @@ var _withdrawService *withdrawService
 func GetWithdrawService() *withdrawService {
 	if _withdrawService == nil {
 		_withdrawService = new(withdrawService)
-		_withdrawService.Once = sync.Once {}
+		_withdrawService.Once = sync.Once{}
 		_withdrawService.Once.Do(func() {
 			_withdrawService.create()
 		})
@@ -81,7 +82,7 @@ func (service *withdrawService) RemoveWithdraw(asset string, id int) {
 	for i, wd := range service.wdsToSend {
 		if wd.Id == id && wd.Asset == asset {
 			service.wdsToSendLock.Lock()
-			service.wdsToSend = append(service.wdsToSend[:i], service.wdsToSend[i + 1:]...)
+			service.wdsToSend = append(service.wdsToSend[:i], service.wdsToSend[i+1:]...)
 			service.wdsToSendLock.Unlock()
 			return
 		}
@@ -125,7 +126,7 @@ func (service *withdrawService) waitForWithdraw() {
 		// 等待接收来自API的提币请求
 		var withdraw entities.BaseWithdraw
 		var ok bool
-		if withdraw, ok = <- RevWithdrawSig; !ok {
+		if withdraw, ok = <-RevWithdrawSig; !ok {
 			break
 		}
 		utils.LogMsgEx(utils.INFO, "接收到一笔待发送的提币：%v", withdraw)
@@ -135,12 +136,12 @@ func (service *withdrawService) waitForWithdraw() {
 			utils.LogMsgEx(utils.ERROR, "新增提币请求失败：%v", err)
 			continue
 		}
-		if _, err = dao.GetProcessDAO().SaveProcess(&entities.DatabaseProcess {
-			BaseProcess: entities.BaseProcess {
-				Id: withdraw.Id,
-				Asset: withdraw.Asset,
-				Type: entities.WITHDRAW,
-				Process: entities.LOAD,
+		if _, err = dao.GetProcessDAO().SaveProcess(&entities.DatabaseProcess{
+			BaseProcess: entities.BaseProcess{
+				Id:         withdraw.Id,
+				Asset:      withdraw.Asset,
+				Type:       entities.WITHDRAW,
+				Process:    entities.LOAD,
 				Cancelable: true,
 			},
 			LastUpdateTime: time.Now(),
@@ -195,13 +196,13 @@ func (service *withdrawService) sendTransactions() {
 				utils.LogMsgEx(utils.ERROR, "持久化到数据库失败：%v", err)
 				continue
 			}
-			if _, err = dao.GetProcessDAO().SaveProcess(&entities.DatabaseProcess {
-				BaseProcess: entities.BaseProcess {
-					Id: withdraw.Id,
-					TxHash: txHash,
-					Asset: withdraw.Asset,
-					Type: entities.WITHDRAW,
-					Process: entities.SENT,
+			if _, err = dao.GetProcessDAO().SaveProcess(&entities.DatabaseProcess{
+				BaseProcess: entities.BaseProcess{
+					Id:         withdraw.Id,
+					TxHash:     txHash,
+					Asset:      withdraw.Asset,
+					Type:       entities.WITHDRAW,
+					Process:    entities.SENT,
 					Cancelable: false,
 				},
 				LastUpdateTime: time.Now(),
@@ -217,7 +218,7 @@ func (service *withdrawService) sendTransactions() {
 			service.wdsToInchainLock.Unlock()
 
 			// 如果发送成功，立刻删除这笔提币请求（以防重复发提币，为了防止索引出错，立即跳出循环）
-			service.wdsToSend = append(service.wdsToSend[:i], service.wdsToSend[i + 1:]...)
+			service.wdsToSend = append(service.wdsToSend[:i], service.wdsToSend[i+1:]...)
 			break
 		}
 		service.wdsToSendLock.RUnlock()
@@ -241,7 +242,7 @@ func (service *withdrawService) waitForInchain() {
 
 			// 如果已经入链，发送给notify服务等待稳定
 			if height == 0 {
-				if num % 100 == 0 {
+				if num%100 == 0 {
 					utils.LogMsgEx(utils.INFO, "交易：%s等待入链", txHash)
 				}
 				service.wdsToInchain[txHash]++
@@ -266,16 +267,16 @@ func (service *withdrawService) waitForInchain() {
 					utils.LogMsgEx(utils.ERROR, "获取提币交易id失败：%v", err)
 					continue
 				}
-				if _, err = dao.GetProcessDAO().SaveProcess(&entities.DatabaseProcess {
-					BaseProcess: entities.BaseProcess {
-						Id: id,
-						TxHash: txHash,
-						Asset: wd.Asset,
-						Type: entities.WITHDRAW,
-						Process: entities.INCHAIN,
+				if _, err = dao.GetProcessDAO().SaveProcess(&entities.DatabaseProcess{
+					BaseProcess: entities.BaseProcess{
+						Id:         id,
+						TxHash:     txHash,
+						Asset:      wd.Asset,
+						Type:       entities.WITHDRAW,
+						Process:    entities.INCHAIN,
 						Cancelable: false,
 					},
-					Height: wd.Height,
+					Height:         wd.Height,
 					CompleteHeight: wd.Height + uint64(utils.GetConfig().GetCoinSettings().Stable),
 					LastUpdateTime: time.Now(),
 				}); err != nil {

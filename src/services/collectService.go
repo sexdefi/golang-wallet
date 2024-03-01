@@ -1,10 +1,10 @@
 package services
 
 import (
+	"main/src/dao"
+	"main/src/rpcs"
+	"main/src/utils"
 	"sync"
-	"utils"
-	"rpcs"
-	"dao"
 	"time"
 )
 
@@ -19,7 +19,7 @@ var _collectService *collectService
 func GetCollectService() *collectService {
 	if _collectService == nil {
 		_collectService = new(collectService)
-		_collectService.Once = sync.Once {}
+		_collectService.Once = sync.Once{}
 		_collectService.Once.Do(func() {
 			_collectService.create()
 		})

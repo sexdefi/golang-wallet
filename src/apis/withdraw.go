@@ -1,35 +1,35 @@
 package apis
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"main/src/dao"
+	"main/src/entities"
+	"main/src/rpcs"
+	"main/src/services"
+	"main/src/utils"
 	"net/http"
 	"regexp"
-	"encoding/json"
-	"io/ioutil"
-	"utils"
-	"entities"
-	"services"
-	"dao"
-	"strings"
-	"fmt"
 	"strconv"
-	"rpcs"
+	"strings"
 )
 
 type withdrawReq struct {
-	Id int			`json:"id"`
-	Value float64	`json:"value"`
-	Target string	`json:"target"`
+	Id     int     `json:"id"`
+	Value  float64 `json:"value"`
+	Target string  `json:"target"`
 }
 
 const withdrawPath = "^/api/withdraw/([A-Z]{3,})$"
 const validAddrPath = "^/api/withdraw/([A-Z]{3,})/valid_address/(\\w+)$"
-const cancelPath = "^/api/withdraw/([A-Z]{3,})/id/(\\d+)$"// 只能用提币id撤销提币
+const cancelPath = "^/api/withdraw/([A-Z]{3,})/id/(\\d+)$" // 只能用提币id撤销提币
 
-var wdRouteMap = map[string]interface {} {
-	fmt.Sprintf("%s %s", http.MethodPost, withdrawPath):	doWithdraw,
-	fmt.Sprintf("%s %s", http.MethodGet, withdrawPath):		getWithdraw,
-	fmt.Sprintf("%s %s", http.MethodGet, validAddrPath):	validAddress,
-	fmt.Sprintf("%s %s", http.MethodDelete, cancelPath):	cancelWithdraw,
+var wdRouteMap = map[string]interface{}{
+	fmt.Sprintf("%s %s", http.MethodPost, withdrawPath): doWithdraw,
+	fmt.Sprintf("%s %s", http.MethodGet, withdrawPath):  getWithdraw,
+	fmt.Sprintf("%s %s", http.MethodGet, validAddrPath): validAddress,
+	fmt.Sprintf("%s %s", http.MethodDelete, cancelPath): cancelWithdraw,
 }
 
 func doWithdraw(w http.ResponseWriter, req *http.Request) []byte {
@@ -137,7 +137,7 @@ func getWithdraw(w http.ResponseWriter, req *http.Request) []byte {
 		return ret
 	}
 
-	conds := make(map[string]interface {})
+	conds := make(map[string]interface{})
 	conds["asset"] = params[0]
 	var result []entities.DatabaseWithdraw
 	var err error
@@ -153,7 +153,7 @@ func getWithdraw(w http.ResponseWriter, req *http.Request) []byte {
 		}
 	}
 
-	if result ,err = dao.GetWithdrawDAO().GetWithdraws(conds); err != nil {
+	if result, err = dao.GetWithdrawDAO().GetWithdraws(conds); err != nil {
 		resp.Code = 500
 		resp.Msg = err.Error()
 		ret, _ := json.Marshal(resp)
@@ -232,7 +232,7 @@ func cancelWithdraw(w http.ResponseWriter, req *http.Request) []byte {
 		services.GetWithdrawService().RemoveWithdraw(asset, id)
 
 		// 再删除数据库和缓存中的信息
-		var result interface {}
+		var result interface{}
 		if result, err = dao.GetWithdrawDAO().DeleteById(asset, id); err != nil {
 			resp.Code = 500
 			resp.Msg = fmt.Sprintf("删除提币记录（%d）失败：%v", id, err)
